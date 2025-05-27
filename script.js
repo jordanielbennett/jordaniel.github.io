@@ -1,12 +1,11 @@
-const colors = [
-  '#c3fbb0', '#d8ccf7', '#ffbad4',
-  '#ffe28a', '#ffa078', '#c1e1ff', '#abebe3'
-];
-
-const tracks = [
-  'audio/track1.mp3', 'audio/track2.mp3', 'audio/track3.mp3',
-  'audio/track4.mp3', 'audio/track5.mp3', 'audio/track6.mp3',
-  'audio/track7.mp3'
+const trackColorPairs = [
+  { track: 'audio/track1.mp3', color: '#c3fbb0' },
+  { track: 'audio/track2.mp3', color: '#d8ccf7' },
+  { track: 'audio/track3.mp3', color: '#ffbad4' },
+  { track: 'audio/track4.mp3', color: '#ffe28a' },
+  { track: 'audio/track5.mp3', color: '#ffa078' },
+  { track: 'audio/track6.mp3', color: '#c1e1ff' },
+  { track: 'audio/track7.mp3', color: '#abebe3' }
 ];
 
 let playlist = [];
@@ -22,27 +21,31 @@ function shuffle(array) {
   return arr;
 }
 
-function playRandom() {
-  const color = colors[Math.floor(Math.random() * colors.length)];
-  document.getElementById('name').style.color = color;
-
+function playNext() {
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
   }
 
-  if (playlist.length === 0) playlist = shuffle(tracks);
+  if (playlist.length === 0) {
+    playlist = shuffle(trackColorPairs);
+  }
 
-  currentAudio = new Audio(playlist.shift());
+  const { track, color } = playlist.shift();
+
+  document.getElementById('name').style.color = color;
+
+  currentAudio = new Audio(track);
   currentAudio.play().catch(err => {
-    console.log("Autoplay blocked or error:", err);
+    console.log("Playback error or autoplay blocked:", err);
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  playRandom();
+  playNext();
 });
 
 document.addEventListener('click', () => {
-  playRandom();
+  playNext();
 });
+
