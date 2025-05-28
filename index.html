@@ -27,7 +27,8 @@
       font-family: Helvetica, Arial, sans-serif;
       user-select: none;
       pointer-events: none;
-      color: white;
+      color: #c3fbb0;
+      mix-blend-mode: difference;
     }
   </style>
 </head>
@@ -97,21 +98,22 @@
         requestAnimationFrame(animate);
         analyser.getByteFrequencyData(dataArray);
 
-        ctx.fillStyle = 'rgba(26, 26, 26, 0.3)';
+        // Fade with semi-transparent overlay
+        ctx.fillStyle = 'rgba(26, 26, 26, 0.08)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
         for (let i = 0; i < bufferLength; i++) {
-          const radius = dataArray[i] * 0.8;
+          const radius = dataArray[i] * 1.2;
           const angle = i * (Math.PI * 2 / bufferLength);
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
 
           ctx.beginPath();
-          ctx.arc(x, y, 2, 0, Math.PI * 2);
-          ctx.fillStyle = `hsl(${i * 4}, 80%, 70%)`;
+          ctx.arc(x, y, 3 + Math.sin(Date.now() * 0.002 + i) * 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${i * 5 + Date.now() * 0.01}, 80%, 70%)`;
           ctx.fill();
         }
       }
@@ -123,3 +125,4 @@
   </script>
 </body>
 </html>
+
