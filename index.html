@@ -27,7 +27,6 @@
       font-family: Helvetica, Arial, sans-serif;
       user-select: none;
       pointer-events: none;
-      color: #c3fbb0;
       mix-blend-mode: difference;
     }
   </style>
@@ -47,14 +46,14 @@
     });
 
     const audio = new Audio();
-    const tracks = [
-      'audio/track1.mp3',
-      'audio/track2.mp3',
-      'audio/track3.mp3',
-      'audio/track4.mp3',
-      'audio/track5.mp3',
-      'audio/track6.mp3',
-      'audio/track7.mp3'
+    const trackColorPairs = [
+      { track: 'audio/track1.mp3', color: '#c3fbb0' },
+      { track: 'audio/track2.mp3', color: '#d8ccf7' },
+      { track: 'audio/track3.mp3', color: '#ffbad4' },
+      { track: 'audio/track4.mp3', color: '#ffe28a' },
+      { track: 'audio/track5.mp3', color: '#ffa078' },
+      { track: 'audio/track6.mp3', color: '#c1e1ff' },
+      { track: 'audio/track7.mp3', color: '#abebe3' }
     ];
 
     let currentAudio = null;
@@ -75,9 +74,12 @@
         currentAudio.currentTime = 0;
       }
 
-      if (playlist.length === 0) playlist = shuffle(tracks);
-      const nextTrack = playlist.shift();
-      currentAudio = new Audio(nextTrack);
+      if (playlist.length === 0) playlist = shuffle(trackColorPairs);
+      const { track, color } = playlist.shift();
+
+      document.getElementById('name').style.color = color;
+
+      currentAudio = new Audio(track);
       currentAudio.crossOrigin = "anonymous";
 
       const context = new AudioContext();
@@ -125,4 +127,3 @@
   </script>
 </body>
 </html>
-
