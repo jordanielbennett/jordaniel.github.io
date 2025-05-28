@@ -113,6 +113,9 @@
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
 
+          // Skip drawing near the center to remove the dot
+          if (Math.hypot(x - centerX, y - centerY) < 10) continue;
+
           ctx.beginPath();
           ctx.arc(x, y, 3 + Math.sin(Date.now() * 0.002 + i) * 1.5, 0, Math.PI * 2);
           ctx.fillStyle = `hsl(${i * 5 + Date.now() * 0.01}, 80%, 70%)`;
