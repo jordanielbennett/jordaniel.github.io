@@ -100,8 +100,18 @@
         requestAnimationFrame(animate);
         analyser.getByteFrequencyData(dataArray);
 
-        // Fade with semi-transparent overlay
-        ctx.fillStyle = 'rgba(26, 26, 26, 0.08)';
+        // Use a subtle radial gradient fade for smoother trails
+        const gradient = ctx.createRadialGradient(
+          canvas.width / 2,
+          canvas.height / 2,
+          0,
+          canvas.width / 2,
+          canvas.height / 2,
+          Math.max(canvas.width, canvas.height)
+        );
+        gradient.addColorStop(0, 'rgba(26,26,26,0.04)');
+        gradient.addColorStop(1, 'rgba(26,26,26,0.1)');
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const centerX = canvas.width / 2;
@@ -119,7 +129,10 @@
           ctx.beginPath();
           ctx.arc(x, y, 3 + Math.sin(Date.now() * 0.002 + i) * 1.5, 0, Math.PI * 2);
           ctx.fillStyle = `hsl(${i * 5 + Date.now() * 0.01}, 80%, 70%)`;
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = ctx.fillStyle;
           ctx.fill();
+          ctx.shadowBlur = 0; // Reset after each draw
         }
       }
       animate();
