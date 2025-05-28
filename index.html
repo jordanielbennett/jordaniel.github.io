@@ -5,9 +5,121 @@
   <title>jordaniel</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    body {
+      margin: 0;
+      background-color: #1a1a1a;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #name {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 5em;
+      font-weight: bold;
+      text-transform: lowercase;
+      font-family: Helvetica, Arial, sans-serif;
+      user-select: none;
+      pointer-events: none;
+      color: white;
+    }
+  </style>
 </head>
 <body>
+  <canvas id="visualizer"></canvas>
   <div id="name">jordaniel</div>
-  <script src="script.js"></script>
+  <script>
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    const audio = new Audio();
+    const tracks = [
+      'audio/track1.mp3',
+      'audio/track2.mp3',
+      'audio/track3.mp3',
+      'audio/track4.mp3',
+      'audio/track5.mp3',
+      'audio/track6.mp3',
+      'audio/track7.mp3'
+    ];
+
+    let currentAudio = null;
+    let playlist = [];
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function playNext() {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+
+      if (playlist.length === 0) playlist = shuffle(tracks);
+      const nextTrack = playlist.shift();
+      currentAudio = new Audio(nextTrack);
+      currentAudio.crossOrigin = "anonymous";
+
+      const context = new AudioContext();
+      const src = context.createMediaElementSource(currentAudio);
+      const analyser = context.createAnalyser();
+
+      src.connect(analyser);
+      analyser.connect(context.destination);
+      analyser.fftSize = 256;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      currentAudio.addEventListener('ended', playNext);
+      currentAudio.play();
+      context.resume();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.fillStyle = 'rgba(26, 26, 26, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const radius = dataArray[i] * 0.8;
+          const angle = i * (Math.PI * 2 / bufferLength);
+          const x = centerX + Math.cos(angle) * radius;
+          const y = centerY + Math.sin(angle) * radius;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${i * 4}, 80%, 70%)`;
+          ctx.fill();
+        }
+      }
+      animate();
+    }
+
+    document.addEventListener('DOMContentLoaded', playNext);
+    document.addEventListener('click', playNext);
+  </script>
 </body>
 </html>
