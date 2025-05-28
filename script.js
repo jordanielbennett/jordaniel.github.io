@@ -11,9 +11,8 @@ const trackColorPairs = [
 let playlist = [];
 let currentAudio = null;
 
-// Fisher-Yates shuffle
 function shuffle(array) {
-  let arr = [...array];
+  const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -22,20 +21,28 @@ function shuffle(array) {
 }
 
 function playNext() {
+  // Stop any current track
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
+    currentAudio = null;
   }
 
+  // Refill the playlist if empty
   if (playlist.length === 0) {
     playlist = shuffle(trackColorPairs);
   }
 
   const { track, color } = playlist.shift();
-
   document.getElementById('name').style.color = color;
 
   currentAudio = new Audio(track);
+
+  // Auto-play the next track when this one ends
+  currentAudio.addEventListener('ended', () => {
+    playNext();
+  });
+
   currentAudio.play().catch(err => {
     console.log("Playback error or autoplay blocked:", err);
   });
@@ -48,4 +55,5 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('click', () => {
   playNext();
 });
+
 
