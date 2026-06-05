@@ -4,8 +4,8 @@ const trackColorPairs = [
   { track: 'audio/track3.mp3', color: '#ffbad4' },
   { track: 'audio/track4.mp3', color: '#ffe28a' },
   { track: 'audio/track5.mp3', color: '#ffa078' },
-  { track: 'audio/track6.mp3', color: '#c1e1ff' },
-  { track: 'audio/track7.mp3', color: '#abebe3' }
+//  { track: 'audio/track6.mp3', color: '#c1e1ff' },
+//  { track: 'audio/track7.mp3', color: '#abebe3' }
 ];
 
 let playlist = [];
