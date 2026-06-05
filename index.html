@@ -34,6 +34,7 @@
 <body>
   <canvas id="visualizer"></canvas>
   <div id="name">jordaniel</div>
+
   <script>
     const canvas = document.getElementById('visualizer');
     const ctx = canvas.getContext('2d');
@@ -45,19 +46,41 @@
       canvas.height = window.innerHeight;
     });
 
-    const audio = new Audio();
+    // 1. FIXED: Removed track 6 and 7 from the array entirely
     const trackColorPairs = [
       { track: 'audio/track1.mp3', color: '#c3fbb0' },
       { track: 'audio/track2.mp3', color: '#d8ccf7' },
       { track: 'audio/track3.mp3', color: '#ffbad4' },
       { track: 'audio/track4.mp3', color: '#ffe28a' },
-      { track: 'audio/track5.mp3', color: '#ffa078' },
-      { track: 'audio/track6.mp3', color: '#c1e1ff' },
-      { track: 'audio/track7.mp3', color: '#abebe3' }
+      { track: 'audio/track5.mp3', color: '#ffa078' }
     ];
 
-    let currentAudio = null;
     let playlist = [];
+    
+    // 2. FIXED: Setup the Audio elements ONCE globally to prevent crashing on song change
+    const currentAudio = new Audio();
+    currentAudio.crossOrigin = "anonymous";
+
+    let audioContext;
+    let analyser;
+    let dataArray;
+    let isAudioSetup = false;
+
+    function setupAudioEngine() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioContext.createMediaElementSource(currentAudio);
+      analyser = audioContext.createAnalyser();
+
+      src.connect(analyser);
+      analyser.connect(audioContext.destination);
+      analyser.fftSize = 256;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+      
+      // Start the animation loop just once
+      animate();
+    }
 
     function shuffle(array) {
       const arr = [...array];
@@ -69,65 +92,71 @@
     }
 
     function playNext() {
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+      // Initialize audio nodes on first user interaction
+      if (!isAudioSetup) {
+        setupAudioEngine();
+        isAudioSetup = true;
       }
 
-      if (playlist.length === 0) playlist = shuffle(trackColorPairs);
+      // Resume context if browser suspended it
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      // If playlist is empty, refill and reshuffle
+      if (playlist.length === 0) {
+        playlist = shuffle(trackColorPairs);
+      }
+      
       const { track, color } = playlist.shift();
 
       document.getElementById('name').style.color = color;
 
-      currentAudio = new Audio(track);
-      currentAudio.crossOrigin = "anonymous";
-
-      const context = new AudioContext();
-      const src = context.createMediaElementSource(currentAudio);
-      const analyser = context.createAnalyser();
-
-      src.connect(analyser);
-      analyser.connect(context.destination);
-      analyser.fftSize = 256;
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-
-      currentAudio.addEventListener('ended', playNext);
-      currentAudio.play();
-      context.resume();
-
-      function animate() {
-        requestAnimationFrame(animate);
-        analyser.getByteFrequencyData(dataArray);
-
-        // Lower opacity to reduce trail intensity
-        ctx.fillStyle = 'rgba(26, 26, 26, 0.15)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        for (let i = 0; i < bufferLength; i++) {
-          const radius = dataArray[i] * 1.2;
-          const angle = i * (Math.PI * 2 / bufferLength);
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-
-          if (Math.hypot(x - centerX, y - centerY) < 10) continue;
-
-          ctx.beginPath();
-          ctx.arc(x, y, 3 + Math.sin(Date.now() * 0.002 + i) * 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = `hsl(${i * 5 + Date.now() * 0.01}, 80%, 70%)`;
-          ctx.shadowBlur = 4;
-          ctx.shadowColor = ctx.fillStyle;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        }
-      }
-      animate();
+      // Change the source dynamically instead of instantiating new Audio()
+      currentAudio.src = track;
+      currentAudio.load();
+      
+      currentAudio.play().catch(err => {
+        console.log("Playback interrupted or blocked by browser:", err);
+      });
     }
 
-    document.addEventListener('DOMContentLoaded', playNext);
+    // Move to next song when current one finishes
+    currentAudio.addEventListener('ended', playNext);
+
+    // Visualizer loop (runs continuously once active)
+    function animate() {
+      requestAnimationFrame(animate);
+      if (!analyser) return;
+
+      analyser.getByteFrequencyData(dataArray);
+      const bufferLength = analyser.frequencyBinCount;
+
+      ctx.fillStyle = 'rgba(26, 26, 26, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const radius = dataArray[i] * 1.2;
+        const angle = i * (Math.PI * 2 / bufferLength);
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+
+        if (Math.hypot(x - centerX, y - centerY) < 10) continue;
+
+        ctx.beginPath();
+        ctx.arc(x, y, 3 + Math.sin(Date.now() * 0.002 + i) * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${i * 5 + Date.now() * 0.01}, 80%, 70%)`;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Trigger on user click (browser standard requirement for audio playback)
     document.addEventListener('click', playNext);
   </script>
 </body>
