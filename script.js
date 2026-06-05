@@ -10,7 +10,7 @@
       margin: 0;
       background-color: #1a1a1a;
       overflow: hidden;
-      cursor: pointer; /* Gives a visual cue that the page is clickable */
+      cursor: pointer;
     }
     canvas {
       position: absolute;
@@ -29,13 +29,19 @@
       user-select: none;
       pointer-events: none;
       mix-blend-mode: difference;
-      color: #ffffff; /* Default starting color */
+      transition: color 0.5s ease; /* Makes the text color change smoothly */
+      animation: pulse 2s infinite ease-in-out; /* Hint to make user click */
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
     }
   </style>
 </head>
 <body>
   <canvas id="visualizer"></canvas>
-  <div id="name">jordaniel</div>
+  <div id="name" style="color: #ffffff;">jordaniel</div>
 
   <script>
     const canvas = document.getElementById('visualizer');
@@ -48,7 +54,6 @@
       canvas.height = window.innerHeight;
     });
 
-    // FIXED: Cleaned up array, completely deleted old tracks, no broken trailing commas
     const trackColorPairs = [
       { track: 'audio/track1.mp3', color: '#c3fbb0' },
       { track: 'audio/track2.mp3', color: '#d8ccf7' },
@@ -72,7 +77,12 @@
       return arr;
     }
 
-    // Initialize Audio Graph ONCE on the very first user click
+    // --- NEW: IMMEDIATE COLOR ASSIGNMENT ---
+    // This picks a random color from your array right away on page load
+    const initialPair = trackColorPairs[Math.floor(Math.random() * trackColorPairs.length)];
+    document.getElementById('name').style.color = initialPair.color;
+    // ----------------------------------------
+
     function initAudio() {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       currentAudio = new Audio();
@@ -88,25 +98,22 @@
       const bufferLength = analyser.frequencyBinCount;
       dataArray = new Uint8Array(bufferLength);
 
-      // Automatically advance when song ends
       currentAudio.addEventListener('ended', playNext);
-
-      // Kick off the visualizer loop
       animate();
     }
 
     function playNext() {
-      // 1. Build the audio elements on first click if they don't exist yet
+      // Remove the pulsing animation class once the user starts the music experience
+      document.getElementById('name').style.animation = 'none';
+
       if (!audioContext) {
         initAudio();
       }
 
-      // 2. Bypass browser autoplay restrictions safely
       if (audioContext.state === 'suspended') {
         audioContext.resume();
       }
 
-      // 3. Handle playlist shuffling
       if (playlist.length === 0) {
         playlist = shuffle(trackColorPairs);
       }
@@ -114,7 +121,6 @@
       const { track, color } = playlist.shift();
       document.getElementById('name').style.color = color;
 
-      // 4. Update the track source smoothly without breaking Web Audio nodes
       currentAudio.src = track;
       currentAudio.load();
       
@@ -123,7 +129,6 @@
       });
     }
 
-    // Visualizer drawing loop
     function animate() {
       requestAnimationFrame(animate);
       if (!analyser) return;
@@ -155,8 +160,6 @@
       }
     }
 
-    // FIXED: Removed DOMContentLoaded autoplay attempt. 
-    // Website now safely waits for the user to click anywhere to start or skip songs.
     document.addEventListener('click', playNext);
   </script>
 </body>
